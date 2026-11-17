@@ -1,0 +1,479 @@
+{
+  "name": "Era Snap 01 - Drive / Finance / Email / Telegram",
+  "nodes": [
+    {
+      "id": "3fb529bf-f9a3-550d-b297-fb262335d19f",
+      "name": "Delivery Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1240,
+        280
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "era-snap-delivery",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "c130f826-7040-5b2b-815b-744929d430af",
+      "name": "Verify Delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1030,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const x = $input.first().json; const provided = x.headers?.['x-fotobox-secret']; if (!provided || provided !== $env.N8N_SHARED_SECRET) throw new Error('Unauthorized webhook'); const orderId = x.body?.orderId; if (!/^JSM-[A-F0-9]{16}$/.test(orderId||'')) throw new Error('Invalid order ID'); return [{json:{orderId}}];"
+      }
+    },
+    {
+      "id": "c8bb187c-7695-588f-a5b2-52b9dcac5072",
+      "name": "Get Order Metadata",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -820,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'http://api:4000/internal/orders/' + $('Verify Delivery').item.json.orderId + '/meta' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "56216f46-93cb-5e18-98e0-f49ff086420a",
+      "name": "Create Session Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -610,
+        280
+      ],
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "name": "={{ 'Jasmine-' + $('Verify Delivery').item.json.orderId }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a09c20fd-3244-5dc4-b161-f54654bc44cd",
+      "name": "Fetch Private Photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -390,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'http://api:4000/internal/orders/' + $('Verify Delivery').item.json.orderId + '/strip' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "photo"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "e6ebc9bf-606a-54c7-b7e4-fd433631e8ef",
+      "name": "Upload File to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        280
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "photo",
+        "name": "={{ $('Verify Delivery').item.json.orderId + '-two-strips.jpg' }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('Create Session Folder').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "414571dc-ee1f-5095-80e2-379a506f5253",
+      "name": "Share Privately With Customer",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        55,
+        280
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Upload File to Drive').item.json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "user",
+            "emailAddress": "={{ $('Get Order Metadata').item.json.email }}"
+          }
+        },
+        "options": {
+          "sendNotificationEmail": false
+        }
+      }
+    },
+    {
+      "id": "1ca839fd-7d7d-53c2-9e99-f76e24adf1d3",
+      "name": "Confirm Drive Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        280
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://api:4000/internal/orders/' + $('Verify Delivery').item.json.orderId + '/ready' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({fileId: $('Upload File to Drive').item.json.id}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "1575aba6-3be0-54a9-88b2-c211f7dd4279",
+      "name": "Append Finance Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        520,
+        70
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Transaksi",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Get Order Metadata').item.json.created_at }}",
+            "order_id": "={{ $('Get Order Metadata').item.json.id }}",
+            "name": "={{ $('Get Order Metadata').item.json.name }}",
+            "email": "={{ $('Get Order Metadata').item.json.email }}",
+            "phone": "={{ $('Get Order Metadata').item.json.phone }}",
+            "theme": "={{ $('Get Order Metadata').item.json.theme }}",
+            "amount_idr": "={{ $('Get Order Metadata').item.json.price_idr }}",
+            "status": "PAID",
+            "drive_file_id": "={{ $('Upload File to Drive').item.json.id }}",
+            "drive_link": "={{ 'https://drive.google.com/file/d/'+$('Upload File to Drive').item.json.id+'/view' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "theme",
+              "displayName": "theme",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount_idr",
+              "displayName": "amount_idr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "drive_file_id",
+              "displayName": "drive_file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "drive_link",
+              "displayName": "drive_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6b00258e-1bcc-5d40-a3a4-1e333fee7c7c",
+      "name": "Email Customer",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        275
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Get Order Metadata').item.json.email }}",
+        "subject": "={{ 'Foto Era Snap kamu sudah siap - '+$('Get Order Metadata').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ 'Halo '+$('Get Order Metadata').item.json.name+',\\n\\nTerima kasih sudah foto di Era Snap! Dua strip foto kamu sudah tersimpan di Google Drive dan aksesnya sudah diberikan ke email ini.\\n\\nLihat fotomu: https://drive.google.com/file/d/'+$('Upload File to Drive').item.json.id+'/view\\nOrder ID: '+$('Get Order Metadata').item.json.id+'\\n\\nLove, Era Snap ♡' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "390f90fb-3f7d-5078-93b9-ae5ac128e50b",
+      "name": "Notify CS Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        480
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CS_CHAT_ID }}",
+        "text": "={{ '✅ Order selesai: '+$('Get Order Metadata').item.json.id+' | Rp '+$('Get Order Metadata').item.json.price_idr+' | '+$('Get Order Metadata').item.json.theme+' | Drive ID: '+$('Upload File to Drive').item.json.id+' (jangan forward data pelanggan)' }}",
+        "additionalFields": {}
+      }
+    }
+  ],
+  "connections": {
+    "Delivery Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Delivery": {
+      "main": [
+        [
+          {
+            "node": "Get Order Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order Metadata": {
+      "main": [
+        [
+          {
+            "node": "Create Session Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Session Folder": {
+      "main": [
+        [
+          {
+            "node": "Fetch Private Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Private Photo": {
+      "main": [
+        [
+          {
+            "node": "Upload File to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File to Drive": {
+      "main": [
+        [
+          {
+            "node": "Share Privately With Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Privately With Customer": {
+      "main": [
+        [
+          {
+            "node": "Confirm Drive Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm Drive Success": {
+      "main": [
+        [
+          {
+            "node": "Append Finance Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify CS Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta"
+  },
+  "tags": [],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,52 @@
+name: era-snap
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./api/sql/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      retries: 15
+    networks: [private]
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports: ["127.0.0.1:4000:4000"]
+    volumes: ["private_photos:/app/storage"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [private]
+  n8n:
+    image: n8nio/n8n:stable
+    restart: unless-stopped
+    ports: ["127.0.0.1:5678:5678"]
+    env_file: .env
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: Asia/Jakarta
+      TZ: Asia/Jakarta
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: 'false'
+      # Allow $env in self-hosted workflows; restrict editor access to trusted admins.
+    volumes: ["n8n_data:/home/node/.n8n"]
+    depends_on: [api]
+    networks: [private]
+networks:
+  private:
+    driver: bridge
+volumes:
+  postgres_data:
+  n8n_data:
+  private_photos:

@@ -1,0 +1,22 @@
+# OPTIONAL overlay. Run after initializing Hermes's own account/provider credentials.
+# docker compose -f docker-compose.yml -f docker-compose.agents.yml --profile agents up -d
+services:
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    profiles: [agents]
+    restart: unless-stopped
+    command: gateway run
+    environment:
+      API_SERVER_ENABLED: 'true'
+      API_SERVER_HOST: 0.0.0.0
+      API_SERVER_PORT: 8642
+      API_SERVER_KEY: ${HERMES_API_KEY}
+    volumes:
+      - hermes_data:/opt/data
+    ports: ["127.0.0.1:8642:8642"]
+    networks: [private]
+  api:
+    environment:
+      HERMES_API_URL: http://hermes:8642/v1/chat/completions
+volumes:
+  hermes_data:

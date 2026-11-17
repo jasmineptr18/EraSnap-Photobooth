@@ -1,0 +1,274 @@
+{
+  "name": "Era Snap 02 - Event Leads / CS",
+  "nodes": [
+    {
+      "id": "40baf1ef-359c-5486-b150-878a4e7bf831",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -600,
+        220
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "era-snap-lead",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "11dccc56-5a21-5274-b4b5-98cf8e8d2d72",
+      "name": "Verify Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const x=$input.first().json; if (!x.headers?.['x-fotobox-secret'] || x.headers['x-fotobox-secret']!==$env.N8N_SHARED_SECRET) throw new Error('Unauthorized'); const id=Number(x.body?.leadId); if (!Number.isSafeInteger(id)||id<1) throw new Error('Invalid lead'); return [{json:{leadId:id}}];"
+      }
+    },
+    {
+      "id": "b5e3fb57-c9bc-50de-9392-b547b1348e4c",
+      "name": "Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -170,
+        220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'http://api:4000/internal/leads/' + $('Verify Lead').item.json.leadId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "370b7c91-584e-5c33-8dd1-22ffe6453faa",
+      "name": "Email CS Event",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        40
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $env.CS_EMAIL }}",
+        "subject": "={{ 'Lead B2B Era Snap: '+$('Get Lead').item.json.company }}",
+        "emailType": "text",
+        "message": "={{ 'Ada permintaan event baru!\\nPerusahaan: '+$('Get Lead').item.json.company+'\\nPIC: '+$('Get Lead').item.json.contact_name+'\\nEmail: '+$('Get Lead').item.json.email+'\\nHP: '+$('Get Lead').item.json.phone+'\\nJenis event: '+$('Get Lead').item.json.event_type+'\\nTanggal: '+$('Get Lead').item.json.event_date+'\\nCatatan: '+$('Get Lead').item.json.message }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "3964a95f-a1f0-5b45-87c3-48b4fcf8298e",
+      "name": "Telegram CS Event",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        220
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CS_CHAT_ID }}",
+        "text": "={{ '🎟️ Inquiry B2B: '+$('Get Lead').item.json.company+' | '+$('Get Lead').item.json.event_type+' | Lead #'+$('Get Lead').item.json.id+' — cek email CS untuk detail.' }}",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "00420a80-1ba7-55a3-92a7-4624ed3077d0",
+      "name": "Append B2B Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        80,
+        420
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads_B2B",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.created_at }}",
+            "lead_id": "={{ $json.id }}",
+            "company": "={{ $json.company }}",
+            "contact_name": "={{ $json.contact_name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "event_type": "={{ $json.event_type }}",
+            "event_date": "={{ $json.event_date }}",
+            "notes": "={{ $json.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_name",
+              "displayName": "contact_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_date",
+              "displayName": "event_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Lead": {
+      "main": [
+        [
+          {
+            "node": "Get Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Email CS Event",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram CS Event",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append B2B Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta"
+  },
+  "tags": [],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

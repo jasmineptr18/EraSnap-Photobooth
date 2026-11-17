@@ -1,0 +1,136 @@
+{
+  "name": "Era Snap 03 - Hermes + OpenClaw Daily Ops (Optional)",
+  "nodes": [
+    {
+      "id": "5213dad0-1698-5904-98a2-9774677c4efb",
+      "name": "Daily Ops Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -750,
+        250
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "15ed1603-c739-537a-a264-2ff104052ef9",
+      "name": "Ask Hermes for Ops Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -500,
+        250
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:4000/internal/ai/ops-summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source:'daily-ops'}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "e9f050fb-3a09-59ee-9b55-13966a5292bc",
+      "name": "Telegram Daily AI Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        100
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CS_CHAT_ID }}",
+        "text": "={{ '🤖 Era Snap / Hermes daily review\\n\\n'+$json.summary }}",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "873cb71e-0cb6-5a5c-8ccc-02d60b872e7e",
+      "name": "OpenClaw Agent Hook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        330
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.OPENCLAW_HOOK_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ \"Bearer \" + $env.OPENCLAW_HOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({message:'Log operational insight for Era Snap based ONLY on anonymized summary: '+$('Ask Hermes for Ops Summary').item.json.summary,name:'Era Snap Daily Ops',sessionMode:'isolated'}) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Daily Ops Trigger": {
+      "main": [
+        [
+          {
+            "node": "Ask Hermes for Ops Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Hermes for Ops Summary": {
+      "main": [
+        [
+          {
+            "node": "Telegram Daily AI Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenClaw Agent Hook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta"
+  },
+  "tags": [],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
