@@ -153,3 +153,288 @@
     padding: 2px;
   }
 }
+
+/* Album-inspired photobooth templates: varied layouts, borders and typography. */
+.preview-photo-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;align-content:start;}
+.preview-photo-layout.layout-grid,.preview-photo-layout.layout-film{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 6px;}
+.preview-photo-layout.layout-title,.preview-photo-layout.layout-postcard,.preview-photo-layout.layout-editorial{grid-template-columns:1fr;gap:6px;}
+.preview-photo-layout .preview-era-plaque{grid-column:1/-1;}
+.preview-strip.layout-grid .preview-shot,.preview-strip.layout-film .preview-shot{margin:0;min-width:0;padding:3px;}
+.preview-strip.layout-grid .preview-shot img,.preview-strip.layout-film .preview-shot img{aspect-ratio:3/4;height:auto;object-fit:cover;}
+.preview-strip.layout-vertical .preview-shot,.preview-strip.layout-polaroid .preview-shot{margin:5px 2px 8px;}
+.preview-strip.layout-polaroid .preview-shot{padding:5px 5px 12px;box-shadow:0 3px 5px #20162a28;transform:rotate(-.6deg);}
+.preview-strip.layout-polaroid .preview-shot:nth-child(even){transform:rotate(.8deg);}
+.preview-strip.layout-film{background:#24232b!important;color:#f5f1e8!important;border:5px solid #d7d3ce;}
+.preview-strip.layout-film:before{content:'▪  ▪  ▪  ▪  ▪  ▪  ▪  ▪';display:block;text-align:center;color:#eee;font-size:7px;letter-spacing:7px;padding:2px 0 5px;}
+.preview-strip.layout-film .preview-shot{background:#17171b;border:2px solid #dedbd5;}
+.preview-strip.layout-film .preview-shot img{filter:grayscale(1) contrast(1.12);}
+.preview-strip.layout-grid .preview-shot{border-radius:2px;}
+.preview-strip.layout-postcard{border:4px solid #fff;outline:1px solid var(--design-ink);background-image:linear-gradient(90deg,#ffffff18 1px,transparent 1px),linear-gradient(#ffffff18 1px,transparent 1px);background-size:13px 13px;}
+.preview-strip.layout-postcard header{min-height:56px;border-bottom:1px dashed color-mix(in srgb,var(--design-ink),transparent 45%);margin-bottom:7px;}
+.preview-strip.layout-postcard header strong{font-size:16px;letter-spacing:1.5px;}
+.preview-strip.layout-title .preview-shot{border-style:dashed;}
+.preview-strip.layout-editorial{background-image:repeating-linear-gradient(0deg,transparent 0 17px,#5A4E4312 18px 19px);border:1px solid var(--design-ink);}
+.preview-strip.layout-editorial header{font-family:Georgia,serif;border-bottom:2px solid var(--design-ink);margin-bottom:7px;}
+.preview-strip.layout-editorial .preview-shot{border-radius:0;border:1px solid var(--design-ink);box-shadow:3px 3px 0 #85776535;}
+.mini-pics.layout-grid,.mini-pics.layout-film{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));}
+.mini-pics.layout-grid .mini-pic,.mini-pics.layout-film .mini-pic{height:auto;min-height:0;aspect-ratio:3/4;}
+.mini-pics.layout-title,.mini-pics.layout-postcard,.mini-pics.layout-editorial{grid-template-columns:1fr;}
+.mini-pics.layout-postcard{background:linear-gradient(180deg,#dceeff,#f8fcff);padding:3px;}
+.mini-pics.layout-film{background:#25252b;padding:4px;}
+.mini-pics.layout-film .mini-pic{filter:grayscale(1);border-color:#e6e3df;}
+.mini-strip.layout-postcard{border:5px solid #fff;outline:1px solid var(--frame-ink);}
+.mini-strip.layout-editorial{border:1px solid var(--frame-ink);}
+.mini-strip.layout-polaroid{border-radius:14px 14px 4px 4px;}
+.design-debut .preview-strip{border:2px solid #fff;border-radius:3px 14px 4px 12px;}
+.design-fearless .preview-strip,.design-fearless-tv .preview-strip{border:4px double #a88944;}
+.design-speak-now .preview-strip,.design-speak-now-tv .preview-strip{border:3px double #65488c;border-radius:20px 20px 5px 5px;}
+.design-red .preview-strip,.design-red-tv .preview-strip{box-shadow:4px 5px 0 #742e36,0 3px 9px #1c162318;}
+.design-1989 .preview-strip,.design-1989-vault .preview-strip{border:2px solid #fff;outline:1px solid #27527b;}
+.design-reputation .preview-strip{background:#202026!important;color:#f2f0ed;border:2px solid #d8d7d7;}
+.design-lover .preview-strip{border:4px solid #fff;border-radius:20px;box-shadow:0 0 0 2px #d67f9d;}
+.design-folklore .preview-strip,.design-evermore .preview-strip{border:1px solid #8b7a60;box-shadow:3px 4px 0 #9d927e;}
+.design-midnights .preview-strip{border:1px solid #c9b781;}
+.design-ttpd .preview-strip{border:1px solid #897c6b;background-color:#f4eee2!important;color:#4b4138;}
+@media(max-width:620px){
+  .preview-photo-layout{gap:5px;}
+  .preview-photo-layout.layout-grid,.preview-photo-layout.layout-film{gap:5px 4px;}
+  .preview-strip.layout-grid .preview-shot,.preview-strip.layout-film .preview-shot{padding:2px;}
+  .preview-strip.layout-polaroid .preview-shot{padding:4px 4px 9px;}
+}
+.preview-collage-caption{grid-column:1/-1;min-height:45px;margin:2px 1px 4px;padding:7px 4px;border:1px solid var(--design-ink);background:var(--design-paper);color:var(--design-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;}
+.preview-collage-caption small{font-size:5px;font-weight:800;letter-spacing:1.1px;}
+.preview-collage-caption strong{font:700 13px 'Playfair Display',Georgia,serif;letter-spacing:1.5px;}
+.plaque-1989-vault{border:5px solid #fff;outline:1px solid #27527B;background:linear-gradient(180deg,#f8fcff,#dceeff);}
+.plaque-red-tv{border-style:dashed;border-width:2px;background:linear-gradient(135deg,#fff8ed,#f3d8cc);}
+.mini-plaque-1989-vault{height:23px;border:3px solid #fff;outline:1px solid #27527B;font-size:14px;letter-spacing:3px;color:#4b94c7;}
+.mini-plaque-red-tv{border-style:dashed;color:#a34348;}
+
+
+/* -------------------------------------------------------------------------
+   15 individually art-directed Era Snap templates.
+   Each frame has its own paper treatment, border language and ornamentation.
+   ------------------------------------------------------------------------- */
+.frame-art{position:relative;isolation:isolate;overflow:hidden}
+.frame-art::before,.frame-art::after{content:"";position:absolute;pointer-events:none;z-index:0}
+.frame-art>*{position:relative;z-index:1}
+.mini-strip{position:relative;isolation:isolate}
+.mini-strip::before{content:"";position:absolute;inset:3px;pointer-events:none;z-index:0;opacity:.55}
+.mini-titlebar,.mini-pics,.mini-plaque{position:relative;z-index:1}
+
+/* 01 Debut — stitched country linen and botanical corners */
+.design-debut .preview-strip{border:2px solid #f8f1df;border-radius:4px 18px 5px 15px;background-image:radial-gradient(#fff9 1px,transparent 1.8px);background-size:18px 18px}
+.design-debut .preview-strip::before{content:"✿   ❧";position:absolute;top:4px;right:7px;color:var(--design-ink);font-size:13px;opacity:.7}
+.design-debut .preview-shot{border-radius:9px 2px 9px 2px;border:2px solid #f8f1df;box-shadow:2px 3px 0 #496a5833}
+.art-debut{background-image:radial-gradient(#fff9 1px,transparent 2px);background-size:18px 18px}
+.art-debut .mini-strip{border:2px dashed #496A58;border-radius:3px 12px 3px 12px}
+
+/* 02 Fearless — gilded double-line storybook */
+.design-fearless .preview-strip{border:5px double #a9853d;background-image:linear-gradient(135deg,#fff7d9aa,transparent 38%,#d6ae4d22)}
+.design-fearless .preview-strip header{border-bottom:1px solid #a9853d;margin-bottom:7px}
+.design-fearless .preview-shot{border:4px double #7b5727;box-shadow:0 0 0 2px #e5c56f66}
+.art-fearless{background-image:linear-gradient(135deg,#fff6d9,#e5c56f)}
+.art-fearless .mini-strip{border:4px double #7B5727;background:#fff4d4}
+
+/* 03 Speak Now — lavender arched keepsake */
+.design-speak-now .preview-strip{border:3px double #65488c;border-radius:28px 28px 5px 5px;background-image:radial-gradient(circle,#fff9 1px,transparent 1.7px);background-size:15px 15px}
+.design-speak-now .preview-strip header{padding-top:8px}
+.design-speak-now .preview-shot{border-radius:16px 3px 16px 3px;border:2px solid #65488c}
+.art-speak-now .mini-strip{border:3px double #65488c;border-radius:22px 22px 4px 4px;background:#f2eaff}
+
+/* 04 Red — handwritten ticket and torn-edge scrapbook */
+.design-red .preview-strip{border:2px solid #6d292e;box-shadow:5px 5px 0 #6d292e55;background-image:repeating-linear-gradient(135deg,transparent 0 18px,#fff2 19px 21px)}
+.design-red .preview-strip header{border-bottom:2px dashed #6d292e;padding-bottom:5px}
+.design-red .preview-shot{border:2px dashed #6d292e;transform:rotate(-.4deg)}
+.design-red .preview-shot:nth-child(even){transform:rotate(.5deg)}
+.art-red .mini-strip{border:2px solid #6D292E;box-shadow:4px 4px 0 #6D292E66;background:#f5e4d9}
+
+/* 05 1989 — blue postcard with postage grid */
+.design-1989 .preview-strip{border:5px solid #fff;outline:1px solid #27527b;background-image:linear-gradient(90deg,#27527b13 1px,transparent 1px),linear-gradient(#27527b13 1px,transparent 1px);background-size:13px 13px}
+.design-1989 .preview-strip header{border-bottom:1px dashed #27527b;margin-bottom:7px}
+.design-1989 .preview-shot{border:4px solid white;outline:1px solid #27527b;border-radius:0}
+.art-1989 .mini-strip{border:5px solid #fff;outline:1px solid #27527b;background:#eaf5ff}
+
+/* 06 Reputation — black contact sheet and film sprockets */
+.design-reputation .preview-strip{background:#24232a!important;color:#f4f1ec;border:5px solid #d9d7d3;outline:1px solid #24232a}
+.design-reputation .preview-strip header{border-bottom:1px solid #aaa;margin-bottom:7px}
+.design-reputation .preview-shot{background:#17171b;border:3px double #e2e0e8;filter:grayscale(1);border-radius:0}
+.design-reputation .preview-strip footer{color:#e2e0e8}
+.art-reputation .mini-strip{background:#24232a;border:4px solid #e2e0e8;color:#fff}
+
+/* 07 Lover — pink scalloped polaroid keepsake */
+.design-lover .preview-strip{border:4px solid #fff;border-radius:24px 24px 18px 18px;outline:2px solid #d77d9e;background-image:radial-gradient(#fff9 1px,transparent 2px);background-size:16px 16px}
+.design-lover .preview-shot{border:4px solid #fff;border-radius:16px;padding:5px 5px 12px;box-shadow:0 0 0 1px #a54d70,0 4px 8px #a54d7033}
+.design-lover .preview-shot:nth-child(odd){transform:rotate(-.7deg)}
+.design-lover .preview-shot:nth-child(even){transform:rotate(.7deg)}
+.art-lover .mini-strip{border:4px solid white;border-radius:20px;outline:2px solid #A54D70;background:#fff0f5}
+
+/* 08 folklore — muted library scrapbook and taped corners */
+.design-folklore .preview-strip{border:1px solid #77745f;background-image:repeating-linear-gradient(0deg,transparent 0 22px,#77745f16 23px 24px),linear-gradient(135deg,#ffffff22,transparent)}
+.design-folklore .preview-strip header{font-family:Georgia,serif;border-bottom:1px solid #77745f;margin-bottom:7px}
+.design-folklore .preview-shot{border:2px solid #f3eddd;box-shadow:3px 3px 0 #77745f55;filter:sepia(.12)}
+.design-folklore .preview-shot:nth-child(odd)::before{content:"";position:absolute;top:-5px;left:22%;width:25px;height:9px;background:#e8dfc4cc;transform:rotate(-8deg)}
+.art-folklore .mini-strip{border:1px solid #77745f;background:repeating-linear-gradient(0deg,#f3f0e7 0 10px,#e4dece 11px 12px)}
+
+/* 09 evermore — autumn herbarium with pressed-leaf details */
+.design-evermore .preview-strip{border:2px solid #70462e;background-image:repeating-linear-gradient(45deg,transparent 0 16px,#70462e14 17px 18px)}
+.design-evermore .preview-strip header{border-bottom:1px solid #70462e;margin-bottom:7px;font-family:Georgia,serif;font-style:italic}
+.design-evermore .preview-shot{border:2px solid #f8e7d5;box-shadow:3px 3px 0 #70462e55}
+.design-evermore .preview-strip footer::before{content:"❧  ";font-size:10px}
+.art-evermore .mini-strip{border:2px solid #70462e;background:repeating-linear-gradient(45deg,#f8e7d5 0 12px,#ead5c0 13px 15px)}
+
+/* 10 Midnights — celestial navy observatory */
+.design-midnights .preview-strip{border:2px solid #c9b781;background-image:radial-gradient(#fff 1px,transparent 2px),radial-gradient(#c9b781 1px,transparent 2px);background-size:27px 29px,41px 43px;background-position:0 0,12px 14px}
+.design-midnights .preview-strip header{border-bottom:1px solid #c9b781;margin-bottom:7px}
+.design-midnights .preview-shot{border:2px solid #e9e4d7;box-shadow:0 0 0 2px #292947}
+.design-midnights .preview-strip footer{letter-spacing:2px}
+.art-midnights .mini-strip{border:2px solid #c9b781;background:radial-gradient(#fff 1px,transparent 2px) 0 0/18px 18px,#292947;color:#fff}
+
+/* 11 TTPD — typewritten manuscript */
+.design-ttpd .preview-strip{border:1px solid #5a4e43;background-image:repeating-linear-gradient(0deg,transparent 0 18px,#5a4e4318 19px 20px);box-shadow:4px 4px 0 #8c7c6844}
+.design-ttpd .preview-strip header{font-family:Georgia,serif;border-bottom:2px solid #5a4e43;margin-bottom:8px}
+.design-ttpd .preview-shot{border:1px solid #5a4e43;border-radius:0;box-shadow:3px 3px 0 #b7aa9738}
+.design-ttpd .preview-strip footer{font-family:Georgia,serif;letter-spacing:2px}
+.art-ttpd .mini-strip{border:1px solid #5A4E43;background:repeating-linear-gradient(0deg,#f5f0e7 0 10px,#ded4c4 11px 12px);color:#5A4E43}
+
+/* 12 1989 Vault — ticket-stub postcard variation */
+.design-1989-vault .preview-strip{border:2px dashed #234b76;outline:4px solid #fff;background:linear-gradient(180deg,#dceeff,#f4faff)}
+.design-1989-vault .preview-strip header{border:1px solid #5794cd;margin:3px 0 8px;padding:4px}
+.design-1989-vault .preview-shot{border:2px dashed #234b76;box-shadow:3px 3px 0 #5794cd55}
+.design-1989-vault .preview-strip footer{background:#234b76;color:#fff;padding:5px;margin-top:5px}
+.art-1989-vault .mini-strip{border:2px dashed #234B76;outline:3px solid white;background:#e4f2ff}
+
+/* 13 Red TV — bold tabloid collage */
+.design-red-tv .preview-strip{border:5px solid #713b34;background:linear-gradient(145deg,#f9e8d9,#e5b6a3)}
+.design-red-tv .preview-strip header{background:#713b34;color:#fff;padding:6px;margin:-2px -2px 8px}
+.design-red-tv .preview-shot{border:3px solid #fff;box-shadow:4px 4px 0 #713b3466;transform:rotate(-.5deg)}
+.design-red-tv .preview-strip footer{font-size:7px;letter-spacing:1.8px}
+.art-red-tv .mini-strip{border:5px solid #713B34;background:#f9e8d9}
+
+/* 14 Speak Now TV — violet concert ticket with rounded arch */
+.design-speak-now-tv .preview-strip{border:4px double #49345f;border-radius:28px 28px 4px 4px;background-image:linear-gradient(90deg,#fff3 1px,transparent 1px),radial-gradient(#fff8 1px,transparent 2px);background-size:12px 12px,19px 19px}
+.design-speak-now-tv .preview-strip header{border-bottom:1px solid #49345f;margin:7px 0}
+.design-speak-now-tv .preview-shot{border:4px double #f0e8fa;border-radius:15px 15px 3px 3px;box-shadow:0 3px 0 #49345f55}
+.art-speak-now-tv .mini-strip{border:4px double #49345f;border-radius:24px 24px 3px 3px;background:#f0e8fa}
+
+/* 15 Fearless TV — champagne frame with ribbon and ornate corners */
+.design-fearless-tv .preview-strip{border:5px double #725a2b;background:linear-gradient(135deg,#fff5d9,#d3b77a33)}
+.design-fearless-tv .preview-strip header{border-bottom:1px solid #b18a42;margin:4px 0 8px}
+.design-fearless-tv .preview-strip header::before{content:"✧  ♡  ✧";font-size:9px;letter-spacing:4px}
+.design-fearless-tv .preview-shot{border:3px double #725a2b;box-shadow:0 0 0 2px #fff5d9}
+.design-fearless-tv .preview-strip footer{border-top:1px solid #b18a42;margin-top:5px;padding-top:5px}
+.art-fearless-tv .mini-strip{border:5px double #725A2B;background:#fff5d9}
+
+/* Four captured poses always stay undistorted; crop is intentional, never stretch. */
+.preview-shot img{width:100%;height:auto;object-fit:cover;object-position:center;display:block}
+.preview-photo-layout .preview-shot{min-width:0}
+
+
+/* Landscape album formats: two horizontal photostrips stacked on a wide sheet. */
+.preview-sheet.orientation-horizontal {
+  width: min(100%, 650px);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+  padding: 11px;
+}
+.preview-sheet.orientation-horizontal .preview-strip {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 7px 9px 6px;
+  transform: none;
+}
+.preview-sheet.orientation-horizontal .preview-strip header,
+.preview-sheet.orientation-horizontal .preview-strip footer {
+  grid-column: 1 / -1;
+}
+.preview-sheet.orientation-horizontal .preview-strip header {
+  min-height: 35px;
+  margin: 0 0 5px;
+}
+.preview-sheet.orientation-horizontal .preview-strip header strong {
+  font-size: 11px;
+  margin: 1px 0;
+}
+.preview-sheet.orientation-horizontal .preview-strip header small,
+.preview-sheet.orientation-horizontal .preview-strip header span {
+  font-size: 5px;
+}
+.preview-sheet.orientation-horizontal .preview-photo-layout {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(var(--photo-count, 4), minmax(0, 1fr));
+  gap: 5px;
+  align-items: stretch;
+}
+.preview-sheet.orientation-horizontal .preview-photo-layout .preview-shot {
+  min-width: 0;
+  margin: 0;
+  padding: 3px;
+}
+.preview-sheet.orientation-horizontal .preview-photo-layout .preview-shot img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.62 / 1;
+  object-fit: cover;
+}
+.preview-sheet.orientation-horizontal .preview-strip footer {
+  padding-top: 4px;
+  font-size: 5px;
+}
+.mini-strip.orientation-horizontal {
+  width: min(92%, 270px);
+  min-height: 102px;
+  padding: 5px 7px;
+  transform: rotate(-1deg);
+}
+.mini-strip.orientation-horizontal .mini-titlebar {
+  min-height: 15px;
+  margin-bottom: 4px;
+  font-size: 7px;
+}
+.mini-pics.orientation-horizontal {
+  display: grid;
+  grid-template-columns: repeat(var(--photo-count, 4), minmax(0, 1fr));
+  grid-template-rows: 1fr;
+  gap: 3px;
+}
+.mini-pics.orientation-horizontal .mini-pic {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1.25 / 1;
+}
+.frame-art.orientation-horizontal {
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 620px) {
+  .preview-sheet.orientation-horizontal {
+    width: 100%;
+    padding: 7px;
+    gap: 6px;
+  }
+  .preview-sheet.orientation-horizontal .preview-strip {
+    padding: 5px 5px 4px;
+  }
+  .preview-sheet.orientation-horizontal .preview-photo-layout {
+    gap: 3px;
+  }
+  .preview-sheet.orientation-horizontal .preview-photo-layout .preview-shot {
+    padding: 2px;
+  }
+  .preview-sheet.orientation-horizontal .preview-strip header {
+    min-height: 29px;
+  }
+}
+
+
+/* Dynamic pose counts: three-, four- and six-photo album compositions. */
+.film-frames {
+  grid-template-columns: repeat(var(--film-columns, 4), minmax(0, 1fr));
+}
+.preview-photo-layout.layout-grid .preview-shot img,
+.preview-photo-layout.layout-film .preview-shot img {
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}

@@ -43,15 +43,43 @@ const STICKERS = [
 
 const frameFor = id => FRAMES.find(frame => frame[0] === id) || FRAMES[4];
 
-// Beberapa era memakai susunan foto portrait (2 kolom), sementara era lain tetap landscape.
-const PORTRAIT_FRAME_IDS = ['debut', 'speak-now', 'reputation', 'lover', 'folklore', 'midnights', 'speak-now-tv'];
-const isPortraitFrame = id => PORTRAIT_FRAME_IDS.includes(id);
+// Setiap era memiliki komposisi photobooth yang berbeda, terinspirasi dari referensi pengguna.
+// Semua desain dibuat sebagai artwork orisinal (bukan menyalin template/foto milik kreator lain).
+const FRAME_LAYOUTS = {
+  debut: 'grid', fearless: 'vertical', 'speak-now': 'polaroid', red: 'title',
+  '1989': 'postcard', reputation: 'film', lover: 'polaroid', folklore: 'grid',
+  evermore: 'vertical', midnights: 'grid', ttpd: 'editorial',
+  '1989-vault': 'postcard', 'red-tv': 'title', 'speak-now-tv': 'polaroid', 'fearless-tv': 'vertical'
+};
+const frameLayout = id => FRAME_LAYOUTS[id] || 'vertical';
+// A deliberate mix of portrait photostrips and landscape two-row sheets.
+// Landscape layouts keep four separate photo slots in one horizontal row per strip.
+const FRAME_ORIENTATIONS = {
+  debut: 'horizontal', fearless: 'vertical', 'speak-now': 'vertical', red: 'vertical',
+  '1989': 'vertical', reputation: 'horizontal', lover: 'vertical', folklore: 'vertical',
+  evermore: 'horizontal', midnights: 'horizontal', ttpd: 'vertical',
+  '1989-vault': 'vertical', 'red-tv': 'vertical', 'speak-now-tv': 'vertical', 'fearless-tv': 'horizontal'
+};
+const frameOrientation = id => FRAME_ORIENTATIONS[id] || 'vertical';
+// The number of poses is part of each template's composition (3, 4, or 6).
+const FRAME_PHOTO_COUNTS = {
+  debut: 4, fearless: 3, 'speak-now': 4, red: 4, '1989': 4, reputation: 4,
+  lover: 3, folklore: 6, evermore: 3, midnights: 4, ttpd: 4,
+  '1989-vault': 4, 'red-tv': 4, 'speak-now-tv': 3, 'fearless-tv': 3
+};
+const framePhotoCount = id => FRAME_PHOTO_COUNTS[id] || 4;
+const orientationClass = id => `orientation-${frameOrientation(id)}`;
+const isPortraitFrame = id => ['grid'].includes(frameLayout(id));
+const hasTitlePanel = id => ['title', 'postcard', 'editorial'].includes(frameLayout(id));
+const slotLayoutClass = id => `layout-${frameLayout(id)}`;
 const filterFor = id => FILTERS.find(f => f.id === id) || FILTERS[0];
 
 function PhotoStripPreview({ photos, theme, filterCss = 'none', stickers = [], selectedStickerId, onSelectSticker, onMoveSticker }) {
   const frame = frameFor(theme);
-  const hasTitlePanel = ['1989', 'red', 'ttpd'].includes(theme);
-  const portraitLayout = isPortraitFrame(theme);
+  const layout = frameLayout(theme);
+  const titlePanel = hasTitlePanel(theme);
+  const horizontal = frameOrientation(theme) === 'horizontal';
+  const photoCount = framePhotoCount(theme);
   const sheetRef = useRef(null);
   const draggingRef = useRef(null);
 
@@ -100,31 +128,41 @@ function PhotoStripPreview({ photos, theme, filterCss = 'none', stickers = [], s
     <div
       ref={sheetRef}
       onClick={() => onSelectSticker && onSelectSticker(null)}
-      className={'preview-sheet design-' + theme}
-      style={{ '--design-bg': frame[4], '--design-ink': frame[5], '--design-paper': frame[6] }}
+      className={'preview-sheet design-' + theme + ' ' + orientationClass(theme)}
+      style={{ '--design-bg': frame[4], '--design-ink': frame[5], '--design-paper': frame[6], '--photo-count': photoCount }}
     >
       {[0, 1].map(strip => (
-        <article className={'preview-strip ' + (portraitLayout ? 'portrait-layout' : '')} key={strip}>
+        <article className={'preview-strip ' + slotLayoutClass(theme) + ' ' + orientationClass(theme) + ' design-strip-' + theme} key={strip}>
           <header>
             <small>ERA SNAP · {String(strip + 1).padStart(2, '0')}</small>
             <strong>{frame[1].split(' · ')[0]}</strong>
             <span>{frame[3]} · {frame[3]} · {frame[3]}</span>
           </header>
-          {hasTitlePanel ? (
-            <>
-              {shot(0)}
-              {shot(1)}
-              <div className={'preview-era-plaque plaque-' + theme}>
-                <small>{theme === '1989' ? 'POSTCARD FROM YOUR ERA' : theme === 'red' ? 'A MEMORY IN RED' : 'A PAGE FROM YOUR STORY'}</small>
-                <strong>{theme === '1989' ? '1989' : theme === 'red' ? 'RED' : 'THE POETRY DEPT.'}</strong>
-                <i>{theme === '1989' ? 'YOUR VERSION' : theme === 'red' ? 'KEEP THE MOMENT' : 'VOL. 13 · YOUR VERSION'}</i>
-              </div>
-              {shot(2)}
-              {shot(3)}
-            </>
-          ) : (
-            [0, 1, 2, 3].map(shot)
-          )}
+          <div className={'preview-photo-layout ' + slotLayoutClass(theme) + ' ' + orientationClass(theme)}>
+            {titlePanel ? (
+              <>
+                {shot(0)}
+                {shot(1)}
+                <div className={'preview-era-plaque plaque-' + theme}>
+                  <small>{theme === '1989' ? 'POSTCARD FROM YOUR ERA' : theme === '1989-vault' ? 'FROM THE VAULT · 1989' : theme === 'red' ? 'A MEMORY IN RED' : theme === 'red-tv' ? 'ALL TOO WELL · THE RED ERA' : 'THE TORTURED POETS DEPARTMENT'}</small>
+                  <strong>{theme === '1989' || theme === '1989-vault' ? '1989' : theme === 'red' || theme === 'red-tv' ? 'RED' : 'TTPD'}</strong>
+                  <i>{theme === '1989-vault' ? 'VAULT TRACKS · YOUR VERSION' : theme === '1989' ? 'TAYLOR’S VERSION' : theme === 'red-tv' ? 'TAYLOR’S VERSION · 10 MINUTE VERSION' : theme === 'red' ? 'KEEP THE MOMENT' : 'VOL. 13 · YOUR VERSION'}</i>
+                </div>
+                {shot(2)}
+                {shot(3)}
+              </>
+            ) : (
+              <>
+                {Array.from({ length: photoCount }, (_, i) => i).map(shot)}
+                {!horizontal && (layout === 'grid' || layout === 'film') && (
+                  <div className="preview-collage-caption">
+                    <small>{frame[1].split(' · ')[0].toUpperCase()} · PHOTO DIARY</small>
+                    <strong>YOUR VERSION</strong>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
           <footer>YOUR VERSION · {frame[0].toUpperCase()}</footer>
         </article>
       ))}
@@ -164,11 +202,12 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   const bg = frame[4];
   const ink = frame[5];
   const paper = frame[6];
-  const hasTitlePanel = ['1989', 'red', 'ttpd'].includes(theme);
-  const portraitLayout = isPortraitFrame(theme);
+  const layout = frameLayout(theme);
+  const titlePanel = hasTitlePanel(theme);
 
-  const W = 1100;
-  const H = 1790;
+  const horizontal = frameOrientation(theme) === 'horizontal';
+  const W = horizontal ? 1790 : 1100;
+  const H = horizontal ? 1100 : (layout === 'grid' || layout === 'film') ? 1320 : 1790;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -188,10 +227,11 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   ctx.restore();
 
   const loadedPhotos = await Promise.all(photos.map(p => loadImage(p.url)));
-  const stripX = [32, 568];
-  const stripW = 500;
+  const stripX = horizontal ? [32, 32] : [32, 568];
+  const stripY = horizontal ? [28, 568] : [28, 28];
+  const stripW = horizontal ? W - 64 : 500;
   const stripTop = 28;
-  const stripH = 1734;
+  const stripH = horizontal ? 504 : H - 56;
 
   const drawRoundRect = (x, y, w, h, r) => {
     ctx.beginPath();
@@ -203,42 +243,164 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.closePath();
   };
 
+  const drawAlbumArtwork = (themeId, x, y, w, h, color) => {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.24;
+    ctx.lineWidth = 3;
+    if (themeId === 'debut') {
+      // Country linen: delicate stitched edges and tiny flower marks.
+      ctx.setLineDash([5, 9]); ctx.strokeRect(x + 18, y + 18, w - 36, h - 36); ctx.setLineDash([]);
+      for (let i = 0; i < 8; i++) { const px = x + 30 + (i % 4) * ((w - 60) / 3); const py = y + 30 + Math.floor(i / 4) * (h - 60); ctx.font = '24px serif'; ctx.fillText('✿', px, py + 8); }
+    } else if (themeId === 'fearless' || themeId === 'fearless-tv') {
+      ctx.globalAlpha = 0.48; ctx.lineWidth = 5; ctx.strokeRect(x + 13, y + 13, w - 26, h - 26); ctx.lineWidth = 1.5; ctx.strokeRect(x + 24, y + 24, w - 48, h - 48);
+      ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText(themeId === 'fearless' ? '✦  ✧  ✦' : '✧  ♡  ✧', x + w / 2, y + h - 24);
+    } else if (themeId === 'speak-now' || themeId === 'speak-now-tv') {
+      ctx.globalAlpha = 0.28; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x + w / 2, y + 22, w * 0.36, Math.PI, 0); ctx.stroke();
+      ctx.font = '25px serif'; ctx.textAlign = 'center'; ctx.fillText(themeId === 'speak-now' ? '✧  ✧  ✧' : '❀  ✧  ❀', x + w / 2, y + h - 20);
+    } else if (themeId === 'red' || themeId === 'red-tv') {
+      ctx.globalAlpha = 0.32; ctx.lineWidth = 5; ctx.strokeRect(x + 18, y + 18, w - 36, h - 36); ctx.font = '26px serif'; ctx.textAlign = 'left'; ctx.fillText(themeId === 'red' ? '♥' : '♦', x + 28, y + 58); ctx.textAlign = 'right'; ctx.fillText(themeId === 'red' ? '♥' : '♦', x + w - 28, y + h - 28);
+    } else if (themeId === '1989' || themeId === '1989-vault') {
+      ctx.globalAlpha = 0.22; ctx.lineWidth = 2; for (let gx = x + 20; gx < x + w; gx += 34) { ctx.beginPath(); ctx.moveTo(gx, y + 12); ctx.lineTo(gx, y + h - 12); ctx.stroke(); }
+      for (let gy = y + 20; gy < y + h; gy += 34) { ctx.beginPath(); ctx.moveTo(x + 12, gy); ctx.lineTo(x + w - 12, gy); ctx.stroke(); }
+      ctx.globalAlpha = 0.45; ctx.font = '22px serif'; ctx.textAlign = 'right'; ctx.fillText(themeId === '1989' ? '✈' : '✉', x + w - 22, y + 42);
+    } else if (themeId === 'reputation') {
+      ctx.globalAlpha = 0.55; ctx.lineWidth = 8; for (let yy = y + 18; yy < y + h - 18; yy += 48) { ctx.fillRect(x + 8, yy, 14, 22); ctx.fillRect(x + w - 22, yy, 14, 22); }
+    } else if (themeId === 'lover') {
+      ctx.globalAlpha = 0.35; ctx.lineWidth = 3; ctx.strokeRect(x + 16, y + 16, w - 32, h - 32); ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.fillText('♡  ♡  ♡', x + w / 2, y + h - 22);
+    } else if (themeId === 'folklore') {
+      ctx.globalAlpha = 0.22; ctx.lineWidth = 2; for (let yy = y + 150; yy < y + h - 30; yy += 28) { ctx.beginPath(); ctx.moveTo(x + 18, yy); ctx.lineTo(x + w - 18, yy); ctx.stroke(); }
+      ctx.font = '26px serif'; ctx.textAlign = 'left'; ctx.fillText('❧', x + 22, y + 42); ctx.textAlign = 'right'; ctx.fillText('❧', x + w - 22, y + h - 20);
+    } else if (themeId === 'evermore') {
+      ctx.globalAlpha = 0.32; ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { const bx = x + 25 + k * ((w - 50) / 3); ctx.beginPath(); ctx.moveTo(bx, y + 140); ctx.quadraticCurveTo(bx - 22, y + h / 2, bx + 4, y + h - 130); ctx.stroke(); ctx.font = '22px serif'; ctx.fillText('❧', bx + 4, y + 260); }
+    } else if (themeId === 'midnights') {
+      ctx.globalAlpha = 0.55; ctx.font = '22px serif'; for (let k = 0; k < 14; k++) { const sx = x + 28 + ((k * 67) % (w - 56)); const sy = y + 34 + ((k * 113) % (h - 68)); ctx.fillText(k % 3 === 0 ? '✦' : '·', sx, sy); }
+    } else if (themeId === 'ttpd') {
+      ctx.globalAlpha = 0.25; ctx.lineWidth = 1.5; for (let yy = y + 135; yy < y + h - 24; yy += 26) { ctx.beginPath(); ctx.moveTo(x + 18, yy); ctx.lineTo(x + w - 18, yy); ctx.stroke(); }
+      ctx.globalAlpha = 0.5; ctx.font = '19px serif'; ctx.textAlign = 'right'; ctx.fillText('✒', x + w - 22, y + 42);
+    }
+    ctx.restore();
+  };
+
   for (let s = 0; s < 2; s++) {
     const sx = stripX[s];
+    const sy = stripY[s];
     ctx.save();
-    drawRoundRect(sx, stripTop, stripW, stripH, 20);
-    ctx.fillStyle = bg;
+    drawRoundRect(sx, sy, stripW, stripH, 20);
+    ctx.fillStyle = layout === 'film' ? '#202026' : bg;
     ctx.fill();
+    drawAlbumArtwork(theme, sx, sy, stripW, stripH, ink);
+
+    // Special edition motifs make the re-recorded / vault variants visibly distinct.
+    if (theme === '1989-vault') {
+      ctx.save();
+      ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.setLineDash([10, 8]);
+      ctx.strokeRect(sx + 30, sy + 30, stripW - 60, stripH - 60);
+      ctx.setLineDash([]); ctx.fillStyle = ink; ctx.globalAlpha = 0.9;
+      ctx.font = '700 20px "DM Sans", sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText('FROM THE VAULT', sx + stripW - 38, sy + 78);
+      ctx.restore();
+    } else if (theme === 'red-tv') {
+      ctx.save();
+      ctx.fillStyle = '#F9E8D9'; ctx.fillRect(sx + 10, sy + 10, stripW - 20, 82);
+      ctx.strokeStyle = '#713B34'; ctx.lineWidth = 3; ctx.strokeRect(sx + 10, sy + 10, stripW - 20, 82);
+      ctx.fillStyle = '#713B34'; ctx.textAlign = 'center';
+      ctx.font = '800 22px "DM Sans", sans-serif';
+      ctx.fillText('ALL TOO WELL · TAYLOR’S VERSION', sx + stripW / 2, sy + 43);
+      ctx.font = '600 13px "DM Sans", sans-serif';
+      ctx.fillText('THE RED ERA · A MEMORY IN MOTION', sx + stripW / 2, sy + 69);
+      ctx.restore();
+    } else if (theme === 'speak-now-tv') {
+      ctx.save();
+      ctx.strokeStyle = '#49345F'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(sx + stripW / 2, sy + 32, Math.min(stripW * 0.38, 190), Math.PI, 0); ctx.stroke();
+      ctx.font = '24px serif'; ctx.textAlign = 'center'; ctx.fillStyle = ink;
+      ctx.fillText('✧  ❀  ✧  ❀  ✧', sx + stripW / 2, sy + stripH - 54);
+      ctx.restore();
+    } else if (theme === 'fearless-tv') {
+      ctx.save();
+      ctx.strokeStyle = '#A9853D'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(sx + 28, sy + 105); ctx.lineTo(sx + stripW - 28, sy + 105); ctx.stroke();
+      ctx.fillStyle = '#725A2B'; ctx.font = '700 13px Georgia, serif'; ctx.textAlign = 'center';
+      ctx.fillText('✧  THE FEARLESS EDITION  ✧', sx + stripW / 2, sy + 101);
+      ctx.restore();
+    }
+
+    // Distinct album-inspired paper treatments on the exported strips.
+    if (layout === 'postcard') {
+      ctx.strokeStyle = ink; ctx.globalAlpha = 0.58; ctx.lineWidth = 3;
+      ctx.strokeRect(sx + 12, sy + 12, stripW - 24, stripH - 24);
+      ctx.setLineDash([7, 8]); ctx.strokeRect(sx + 23, sy + 23, stripW - 46, stripH - 46);
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    } else if (layout === 'film') {
+      ctx.fillStyle = '#E7E4DF';
+      for (let y = sy + 18; y < sy + stripH - 18; y += 52) {
+        ctx.fillRect(sx + 7, y, 12, 24);
+        ctx.fillRect(sx + stripW - 19, y, 12, 24);
+      }
+    } else if (layout === 'editorial') {
+      ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.globalAlpha = 0.35;
+      for (let y = sy + 130; y < sy + stripH - 50; y += 34) {
+        ctx.beginPath(); ctx.moveTo(sx + 14, y); ctx.lineTo(sx + stripW - 14, y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
 
     // Header
     ctx.fillStyle = ink;
     ctx.textAlign = 'center';
     ctx.font = '800 16px "DM Sans", sans-serif';
-    ctx.fillText(`ERA SNAP · 0${s + 1}`, sx + stripW / 2, stripTop + 42);
+    ctx.fillText(`ERA SNAP · 0${s + 1}`, sx + stripW / 2, sy + (horizontal ? 25 : 42));
 
     ctx.font = '700 34px "Playfair Display", Georgia, serif';
-    ctx.fillText(frame[1].split(' · ')[0], sx + stripW / 2, stripTop + 82);
+    ctx.fillText(frame[1].split(' · ')[0], sx + stripW / 2, sy + (horizontal ? 60 : 82));
 
     ctx.font = '600 18px sans-serif';
-    ctx.fillText(`${frame[3]}  ·  ${frame[3]}  ·  ${frame[3]}`, sx + stripW / 2, stripTop + 112);
+    ctx.fillText(`${frame[3]}  ·  ${frame[3]}  ·  ${frame[3]}`, sx + stripW / 2, sy + (horizontal ? 91 : 112));
 
     const photoBoxX = sx + 22;
     const photoBoxW = stripW - 44;
-    const slots = portraitLayout
-      ? [
-          { x: photoBoxX, top: stripTop + 260, w: (photoBoxW - 18) / 2, h: 390 },
-          { x: photoBoxX + (photoBoxW + 18) / 2, top: stripTop + 260, w: (photoBoxW - 18) / 2, h: 390 },
-          { x: photoBoxX, top: stripTop + 690, w: (photoBoxW - 18) / 2, h: 390 },
-          { x: photoBoxX + (photoBoxW + 18) / 2, top: stripTop + 690, w: (photoBoxW - 18) / 2, h: 390 }
-        ]
-      : hasTitlePanel
-        ? [
-            { x: photoBoxX, top: stripTop + 136, w: photoBoxW, h: 274 },
-            { x: photoBoxX, top: stripTop + 428, w: photoBoxW, h: 274 },
-            { x: photoBoxX, top: stripTop + 986, w: photoBoxW, h: 274 },
-            { x: photoBoxX, top: stripTop + 1278, w: photoBoxW, h: 274 }
-          ]
-        : [0, 1, 2, 3].map(i => ({ x: photoBoxX, top: stripTop + 136 + i * 356, w: photoBoxW, h: 332 }));
+    const slots = horizontal
+      ? (() => {
+          const gap = 14;
+          const slotW = (photoBoxW - gap * (photoCount - 1)) / photoCount;
+          const slotH = slotW / 1.62;
+          const top = sy + 110 + (360 - slotH) / 2;
+          return Array.from({ length: photoCount }, (_, i) => ({
+            x: photoBoxX + i * (slotW + gap), top, w: slotW, h: slotH
+          }));
+        })()
+      : layout === 'grid' || layout === 'film'
+        ? (() => {
+            const columns = 2;
+            const rows = Math.ceil(photoCount / columns);
+            const gapX = 18;
+            const gapY = rows === 3 ? 18 : 30;
+            const slotW = (photoBoxW - gapX) / columns;
+            const slotH = rows === 3 ? 235 : 350;
+            const topStart = rows === 3 ? sy + 130 : sy + 190;
+            return Array.from({ length: photoCount }, (_, i) => ({
+              x: photoBoxX + (i % columns) * (slotW + gapX),
+              top: topStart + Math.floor(i / columns) * (slotH + gapY),
+              w: slotW, h: slotH
+            }));
+          })()
+        : titlePanel
+          ? [
+              { x: photoBoxX, top: sy + 136, w: photoBoxW, h: 274 },
+              { x: photoBoxX, top: sy + 428, w: photoBoxW, h: 274 },
+              { x: photoBoxX, top: sy + 986, w: photoBoxW, h: 274 },
+              { x: photoBoxX, top: sy + 1278, w: photoBoxW, h: 274 }
+            ]
+          : (() => {
+              const slotH = photoCount === 3 ? 430 : 332;
+              const gap = photoCount === 3 ? 34 : 24;
+              const topStart = photoCount === 3 ? sy + 150 : sy + 136;
+              return Array.from({ length: photoCount }, (_, i) => ({
+                x: photoBoxX, top: topStart + i * (slotH + gap), w: photoBoxW, h: slotH
+              }));
+            })();
 
     slots.forEach((slot, idx) => {
       // Polaroid / frame card behind photo
@@ -246,15 +408,25 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.fillStyle = paper;
       ctx.strokeStyle = ink;
       ctx.lineWidth = 4;
-      const r = ['lover', 'speak-now', 'speak-now-tv', 'debut'].includes(theme) ? 18 : 4;
+      const r = ['lover', 'speak-now', 'speak-now-tv', 'debut'].includes(theme) ? 26 : layout === 'polaroid' ? 12 : 3;
       const slotX = slot.x;
       const slotW = slot.w;
       drawRoundRect(slotX, slot.top, slotW, slot.h, r);
       ctx.fill();
-      ctx.stroke();
+      if (theme === 'fearless' || theme === 'fearless-tv' || theme === 'speak-now-tv') {
+        ctx.lineWidth = 7; ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = ink;
+        drawRoundRect(slotX + 7, slot.top + 7, slotW - 14, slot.h - 14, Math.max(0, r - 5)); ctx.stroke();
+      } else if (theme === 'red' || theme === 'red-tv') {
+        ctx.setLineDash(theme === 'red' ? [9, 6] : [2, 5]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+      } else if (theme === 'lover') {
+        ctx.lineWidth = 6; ctx.stroke(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#FFFFFF';
+        drawRoundRect(slotX + 5, slot.top + 5, slotW - 10, slot.h - 10, Math.max(0, r - 3)); ctx.stroke();
+      } else {
+        ctx.lineWidth = theme === '1989' ? 7 : theme === 'reputation' ? 5 : 3; ctx.stroke();
+      }
 
       // Clip inner image
-      const pad = 10;
+      const pad = layout === 'polaroid' ? 14 : 10;
       const ix = slotX + pad;
       const iy = slot.top + pad;
       const iw = slotW - pad * 2;
@@ -263,7 +435,8 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.save();
       drawRoundRect(ix, iy, iw, ih, Math.max(0, r - 4));
       ctx.clip();
-      ctx.filter = filterCss || 'none';
+      const photoEffects = [filterCss && filterCss !== 'none' ? filterCss : '', layout === 'film' ? 'grayscale(1) contrast(1.16)' : layout === 'editorial' ? 'sepia(.18)' : ''].filter(Boolean);
+      ctx.filter = photoEffects.join(' ') || 'none';
 
       const img = loadedPhotos[idx];
       const imgRatio = img.width / img.height;
@@ -289,8 +462,22 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.restore();
     });
 
-    if (hasTitlePanel) {
-      const pTop = stripTop + 722;
+    if (!horizontal && (layout === 'grid' || layout === 'film')) {
+      const pTop = sy + (photoCount > 4 ? 920 : 980);
+      const pH = photoCount > 4 ? 150 : 190;
+      ctx.save();
+      ctx.fillStyle = paper; ctx.strokeStyle = ink; ctx.lineWidth = 3;
+      ctx.fillRect(photoBoxX, pTop, photoBoxW, pH); ctx.strokeRect(photoBoxX, pTop, photoBoxW, pH);
+      ctx.fillStyle = ink; ctx.textAlign = 'center';
+      ctx.font = '800 17px "DM Sans", sans-serif';
+      ctx.fillText(`${frame[1].split(' · ')[0].toUpperCase()} · PHOTO DIARY`, sx + stripW / 2, pTop + 65);
+      ctx.font = '700 38px "Playfair Display", Georgia, serif';
+      ctx.fillText('YOUR VERSION', sx + stripW / 2, pTop + 125);
+      ctx.restore();
+    }
+
+    if (!horizontal && titlePanel) {
+      const pTop = sy + 722;
       const pH = 244;
       ctx.save();
       ctx.fillStyle = paper;
@@ -303,19 +490,19 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.textAlign = 'center';
       ctx.font = '800 15px "DM Sans", sans-serif';
       ctx.fillText(
-        theme === '1989' ? 'POSTCARD FROM YOUR ERA' : theme === 'red' ? 'A MEMORY IN RED' : 'A PAGE FROM YOUR STORY',
+        theme === '1989' ? 'POSTCARD FROM YOUR ERA' : theme === '1989-vault' ? 'FROM THE VAULT · 1989' : theme === 'red' ? 'A MEMORY IN RED' : theme === 'red-tv' ? 'ALL TOO WELL · THE RED ERA' : 'THE TORTURED POETS DEPARTMENT',
         sx + stripW / 2,
         pTop + 48
       );
       ctx.font = theme === 'ttpd' ? '700 32px "Playfair Display", Georgia, serif' : '700 68px "Playfair Display", Georgia, serif';
       ctx.fillText(
-        theme === '1989' ? '1989' : theme === 'red' ? 'RED' : 'THE POETRY DEPT.',
+        theme === '1989' || theme === '1989-vault' ? '1989' : theme === 'red' || theme === 'red-tv' ? 'RED' : 'TTPD',
         sx + stripW / 2,
         pTop + 145
       );
       ctx.font = '700 15px "DM Sans", sans-serif';
       ctx.fillText(
-        theme === '1989' ? 'YOUR VERSION' : theme === 'red' ? 'KEEP THE MOMENT' : 'VOL. 13 · YOUR VERSION',
+        theme === '1989-vault' ? 'VAULT TRACKS · YOUR VERSION' : theme === '1989' ? 'TAYLOR’S VERSION' : theme === 'red-tv' ? 'TAYLOR’S VERSION · 10 MINUTE VERSION' : theme === 'red' ? 'KEEP THE MOMENT' : 'VOL. 13 · YOUR VERSION',
         sx + stripW / 2,
         pTop + 202
       );
@@ -326,7 +513,7 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.fillStyle = ink;
     ctx.textAlign = 'center';
     ctx.font = '800 17px "DM Sans", sans-serif';
-    ctx.fillText(`YOUR VERSION · ${frame[0].toUpperCase()}`, sx + stripW / 2, stripTop + stripH - 34);
+    ctx.fillText(`YOUR VERSION · ${frame[0].toUpperCase()}`, sx + stripW / 2, sy + stripH - (horizontal ? 18 : 34));
     ctx.restore();
   }
 
@@ -334,7 +521,7 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   stickers.forEach(st => {
     const px = (st.x / 100) * W;
     const py = (st.y / 100) * H;
-    const fontSize = Math.round(st.size * (W / 430));
+    const fontSize = Math.round(st.size * (W / (horizontal ? 650 : 430)));
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate((st.rotate * Math.PI) / 180);
@@ -415,6 +602,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Changing templates in the editor also reconciles the number of captured poses.
+  const selectEditorFrame = (nextTheme) => {
+    setTheme(nextTheme);
+    const required = framePhotoCount(nextTheme);
+    if (photos.length > required) {
+      photos.slice(required).forEach(photo => URL.revokeObjectURL(photo.url));
+      setPhotos(photos.slice(0, required));
+    } else if (photos.length < required) {
+      setReplaceAt(null);
+      setPage('camera');
+    }
+  };
+
   const capture = async () => {
     if (!videoRef.current || !cameraActive || countdown !== null || busy) return;
     setBusy(true);
@@ -464,7 +664,7 @@ function App() {
       if (replaceAt !== null) {
         setReplaceAt(null);
         setPage('edit');
-      } else if (photos.length + 1 >= 4) {
+      } else if (photos.length + 1 >= framePhotoCount(theme)) {
         setPage('edit');
       }
     } catch (e) {
@@ -521,7 +721,7 @@ function App() {
   };
 
   const finishAndRender = async () => {
-    if (photos.length !== 4) return;
+    if (photos.length !== framePhotoCount(theme)) return;
     setBusy(true);
     setError('');
     try {
@@ -616,7 +816,7 @@ function App() {
                 <span className="sparkle-inline">✳</span>
               </h1>
               <p>
-                Langsung buka kamera, ambil 4 selfie seru, pilih 15 desain frame era album favoritmu, lalu percantik dengan filter dan stiker lucu!
+                Langsung buka kamera, ambil 3–6 pose sesuai desain frame, pilih 15 era album favoritmu, lalu percantik dengan filter dan stiker lucu!
               </p>
               <div className="hero-cta">
                 <button className="btn primary" onClick={() => startCameraDirect()}>
@@ -636,7 +836,7 @@ function App() {
 
           <section className="features wrap" id="how">
             {[
-              [<Camera size={23} />, '1. Klik Start & Selfie', 'Langsung buka kamera untuk 4 pose spesial & bisa retake'],
+              [<Camera size={23} />, '1. Klik Start & Selfie', 'Jumlah pose menyesuaikan desain frame, dan setiap foto bisa di-retake'],
               [<Sparkles size={23} />, '2. Pilih Frame Era', '15 template photostrip estetik siap dipilih kapan saja'],
               [<Wand2 size={23} />, '3. Filter, Stiker & Unduh', 'Edit hasil fotomu dengan filter & stiker lalu simpan langsung']
             ].map(([icon, title, description]) => (
@@ -663,14 +863,15 @@ function App() {
                   onClick={() => setTheme(id)}
                   aria-pressed={theme === id}
                 >
-                  <div className={'frame-art art-' + id}>
-                    <div className={'mini-strip ' + (isPortraitFrame(id) ? 'portrait-mini' : '')}>
+                  <div className={'frame-art art-' + id + ' ' + orientationClass(id)}>
+                    <div className={'mini-strip ' + slotLayoutClass(id) + ' ' + orientationClass(id)}>
                       <div className="mini-titlebar">
                         <span>{icon}</span>
                         <b>{name.split(' · ')[0]}</b>
                       </div>
-                      <div className="mini-pics">
-                        {['1989', 'red', 'ttpd'].includes(id) ? (
+                      <div className={'mini-pics ' + slotLayoutClass(id) + ' ' + orientationClass(id)}
+                        style={{ '--photo-count': framePhotoCount(id) }}>
+                        {hasTitlePanel(id) ? (
                           <>
                             {[0, 1].map(pose => (
                               <div key={pose} className={'mini-pic mini-pic-' + pose}>
@@ -678,7 +879,7 @@ function App() {
                               </div>
                             ))}
                             <div className={'mini-plaque mini-plaque-' + id}>
-                              {id === '1989' ? '1989' : id === 'red' ? 'RED' : 'THE POETRY DEPT.'}
+                              {id === '1989' || id === '1989-vault' ? '1989' : id === 'red' || id === 'red-tv' ? 'RED' : 'TTPD'}
                             </div>
                             {[2, 3].map(pose => (
                               <div key={pose} className={'mini-pic mini-pic-' + pose}>
@@ -687,7 +888,7 @@ function App() {
                             ))}
                           </>
                         ) : (
-                          [0, 1, 2, 3].map(pose => (
+                          Array.from({ length: framePhotoCount(id) }, (_, pose) => pose).map(pose => (
                             <div key={pose} className={'mini-pic mini-pic-' + pose}>
                               <i>{icon}</i>
                             </div>
@@ -702,7 +903,7 @@ function App() {
                   <div className="frame-copy">
                     <span>{String(i + 1).padStart(2, '0')} / {mood.split(' · ')[0].toUpperCase()}</span>
                     <h3>{name}</h3>
-                    <p>{mood}</p>
+                    <p>{framePhotoCount(id)} foto · {mood}</p>
                   </div>
                   <span className="frame-check">{theme === id ? <Check size={17} /> : <ArrowRight size={17} />}</span>
                 </button>
@@ -725,10 +926,10 @@ function App() {
             <p>
               {replaceAt !== null
                 ? `Mengulang foto ke-${replaceAt + 1}. Siap pose dalam 3 detik!`
-                : 'Ambil 4 pose terbaikmu. Kamera akan menghitung mundur 3 detik setiap kali klik tombol foto.'}
+                : `Ambil ${framePhotoCount(theme)} pose terbaikmu. Kamera akan menghitung mundur 3 detik setiap kali klik tombol foto.`}
             </p>
             <div className="shot-dots">
-              {[0, 1, 2, 3].map(i => (
+              {Array.from({ length: framePhotoCount(theme) }, (_, i) => i).map(i => (
                 <span key={i} className={photos[i] ? 'filled' : ''}>
                   {photos[i] ? <Check size={13} /> : i + 1}
                 </span>
@@ -745,9 +946,9 @@ function App() {
                 <Camera size={19} />
                 {replaceAt !== null
                   ? `Ambil Ulang Foto ${replaceAt + 1}`
-                  : `Ambil Foto ${Math.min(photos.length + 1, 4)} / 4`}
+                  : `Ambil Foto ${Math.min(photos.length + 1, framePhotoCount(theme))} / ${framePhotoCount(theme)}`}
               </button>
-              {photos.length === 4 && replaceAt === null && (
+              {photos.length === framePhotoCount(theme) && replaceAt === null && (
                 <button onClick={() => setPage('edit')} className="btn outline" style={{ marginLeft: 12 }}>
                   Lanjut Pilih Frame & Edit <ArrowRight size={17} />
                 </button>
@@ -757,8 +958,8 @@ function App() {
 
           <aside className={'film-preview design-' + theme}>
             <h3>Your shots <span>♡</span></h3>
-            <div className="film-frames">
-              {[0, 1, 2, 3].map(i => (
+            <div className="film-frames" style={{ '--film-columns': framePhotoCount(theme) === 6 ? 3 : framePhotoCount(theme) }}>
+              {Array.from({ length: framePhotoCount(theme) }, (_, i) => i).map(i => (
                 <div key={i} className={'film-frame ' + (photos[i] ? 'taken' : 'empty')}>
                   {photos[i] ? (
                     <>
@@ -807,7 +1008,7 @@ function App() {
             <div className="retake-bar">
               <span>Ingin foto ulang?</span>
               <div className="retake-pills">
-                {[0, 1, 2, 3].map(i => (
+                {Array.from({ length: framePhotoCount(theme) }, (_, i) => i).map(i => (
                   <button key={i} className="pill-btn" onClick={() => redoSingle(i)}>
                     <RotateCcw size={13} /> Retake {i + 1}
                   </button>
@@ -830,7 +1031,7 @@ function App() {
                   <button
                     key={id}
                     type="button"
-                    onClick={() => setTheme(id)}
+                    onClick={() => selectEditorFrame(id)}
                     className={'mini-frame-chip ' + (theme === id ? 'active' : '')}
                     style={{ '--chip-bg': bg, '--chip-ink': ink, '--chip-paper': paper }}
                   >
