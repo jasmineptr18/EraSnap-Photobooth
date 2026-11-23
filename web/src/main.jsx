@@ -42,11 +42,16 @@ const STICKERS = [
 ];
 
 const frameFor = id => FRAMES.find(frame => frame[0] === id) || FRAMES[4];
+
+// Beberapa era memakai susunan foto portrait (2 kolom), sementara era lain tetap landscape.
+const PORTRAIT_FRAME_IDS = ['debut', 'speak-now', 'reputation', 'lover', 'folklore', 'midnights', 'speak-now-tv'];
+const isPortraitFrame = id => PORTRAIT_FRAME_IDS.includes(id);
 const filterFor = id => FILTERS.find(f => f.id === id) || FILTERS[0];
 
 function PhotoStripPreview({ photos, theme, filterCss = 'none', stickers = [], selectedStickerId, onSelectSticker, onMoveSticker }) {
   const frame = frameFor(theme);
   const hasTitlePanel = ['1989', 'red', 'ttpd'].includes(theme);
+  const portraitLayout = isPortraitFrame(theme);
   const sheetRef = useRef(null);
   const draggingRef = useRef(null);
 
@@ -99,7 +104,7 @@ function PhotoStripPreview({ photos, theme, filterCss = 'none', stickers = [], s
       style={{ '--design-bg': frame[4], '--design-ink': frame[5], '--design-paper': frame[6] }}
     >
       {[0, 1].map(strip => (
-        <article className="preview-strip" key={strip}>
+        <article className={'preview-strip ' + (portraitLayout ? 'portrait-layout' : '')} key={strip}>
           <header>
             <small>ERA SNAP · {String(strip + 1).padStart(2, '0')}</small>
             <strong>{frame[1].split(' · ')[0]}</strong>
@@ -160,6 +165,7 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   const ink = frame[5];
   const paper = frame[6];
   const hasTitlePanel = ['1989', 'red', 'ttpd'].includes(theme);
+  const portraitLayout = isPortraitFrame(theme);
 
   const W = 1100;
   const H = 1790;
@@ -216,17 +222,23 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.font = '600 18px sans-serif';
     ctx.fillText(`${frame[3]}  ·  ${frame[3]}  ·  ${frame[3]}`, sx + stripW / 2, stripTop + 112);
 
-    const slots = hasTitlePanel
-      ? [
-          { top: stripTop + 136, h: 274 },
-          { top: stripTop + 428, h: 274 },
-          { top: stripTop + 986, h: 274 },
-          { top: stripTop + 1278, h: 274 }
-        ]
-      : [0, 1, 2, 3].map(i => ({ top: stripTop + 136 + i * 356, h: 332 }));
-
     const photoBoxX = sx + 22;
     const photoBoxW = stripW - 44;
+    const slots = portraitLayout
+      ? [
+          { x: photoBoxX, top: stripTop + 260, w: (photoBoxW - 18) / 2, h: 390 },
+          { x: photoBoxX + (photoBoxW + 18) / 2, top: stripTop + 260, w: (photoBoxW - 18) / 2, h: 390 },
+          { x: photoBoxX, top: stripTop + 690, w: (photoBoxW - 18) / 2, h: 390 },
+          { x: photoBoxX + (photoBoxW + 18) / 2, top: stripTop + 690, w: (photoBoxW - 18) / 2, h: 390 }
+        ]
+      : hasTitlePanel
+        ? [
+            { x: photoBoxX, top: stripTop + 136, w: photoBoxW, h: 274 },
+            { x: photoBoxX, top: stripTop + 428, w: photoBoxW, h: 274 },
+            { x: photoBoxX, top: stripTop + 986, w: photoBoxW, h: 274 },
+            { x: photoBoxX, top: stripTop + 1278, w: photoBoxW, h: 274 }
+          ]
+        : [0, 1, 2, 3].map(i => ({ x: photoBoxX, top: stripTop + 136 + i * 356, w: photoBoxW, h: 332 }));
 
     slots.forEach((slot, idx) => {
       // Polaroid / frame card behind photo
@@ -235,15 +247,17 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.strokeStyle = ink;
       ctx.lineWidth = 4;
       const r = ['lover', 'speak-now', 'speak-now-tv', 'debut'].includes(theme) ? 18 : 4;
-      drawRoundRect(photoBoxX, slot.top, photoBoxW, slot.h, r);
+      const slotX = slot.x;
+      const slotW = slot.w;
+      drawRoundRect(slotX, slot.top, slotW, slot.h, r);
       ctx.fill();
       ctx.stroke();
 
       // Clip inner image
       const pad = 10;
-      const ix = photoBoxX + pad;
+      const ix = slotX + pad;
       const iy = slot.top + pad;
-      const iw = photoBoxW - pad * 2;
+      const iw = slotW - pad * 2;
       const ih = slot.h - pad * 2;
 
       ctx.save();
@@ -414,10 +428,20 @@ function App() {
       await sleep(250);
 
       const v = videoRef.current;
+      // Keep the camera's real aspect ratio. A fixed 900x630 canvas
+      // stretched 16:9 / 4:3 camera feeds and made faces look squashed.
+      const sourceWidth = v.videoWidth || v.clientWidth;
+      const sourceHeight = v.videoHeight || v.clientHeight;
+      if (!sourceWidth || !sourceHeight) {
+        throw new Error('Kamera belum siap. Coba tunggu sebentar lalu ambil foto lagi.');
+      }
+      const maxCaptureSize = 1600;
+      const scale = Math.min(1, maxCaptureSize / Math.max(sourceWidth, sourceHeight));
       const c = document.createElement('canvas');
-      c.width = 900;
-      c.height = 630;
+      c.width = Math.max(1, Math.round(sourceWidth * scale));
+      c.height = Math.max(1, Math.round(sourceHeight * scale));
       const ctx = c.getContext('2d');
+      // Keep the familiar mirrored selfie, without changing image proportions.
       ctx.translate(c.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(v, 0, 0, c.width, c.height);
@@ -640,7 +664,7 @@ function App() {
                   aria-pressed={theme === id}
                 >
                   <div className={'frame-art art-' + id}>
-                    <div className="mini-strip">
+                    <div className={'mini-strip ' + (isPortraitFrame(id) ? 'portrait-mini' : '')}>
                       <div className="mini-titlebar">
                         <span>{icon}</span>
                         <b>{name.split(' · ')[0]}</b>
