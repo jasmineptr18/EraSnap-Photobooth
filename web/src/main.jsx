@@ -755,16 +755,29 @@ function App() {
         throw new Error(`Gagal mengirim ke server n8n (HTTP ${res.status})`);
       }
       const text = await res.text();
-      let data = {};
+      let data;
       try {
-        data = text ? JSON.parse(text) : {};
+        data = text ? JSON.parse(text) : null;
       } catch {
-        data = {};
+        throw new Error('Respons server n8n bukan JSON yang valid.');
+      }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Respons server n8n memiliki format yang tidak valid.');
+      }
+      if (data.success === false || data.error) {
+        throw new Error(
+          typeof data.error === 'string'
+            ? data.error
+            : 'Server n8n gagal mengirim foto ke Gmail.'
+        );
       }
 
-      const finalDriveUrl = data.driveUrl || data.webViewLink || '';
+      const finalDriveUrl =
+        (typeof data.driveUrl === 'string' && data.driveUrl) ||
+        (typeof data.webViewLink === 'string' && data.webViewLink) ||
+        '';
       const generatedQr =
-        data.qrUrl ||
+        (typeof data.qrUrl === 'string' && data.qrUrl) ||
         (finalDriveUrl
           ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(finalDriveUrl)}`
           : '');
