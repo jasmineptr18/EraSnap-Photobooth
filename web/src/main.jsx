@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Camera, ArrowRight, Sparkles, Heart, Check, Download,
-  ChevronLeft, RotateCcw, X, Wand2, Sticker, Trash2, Sliders
+  ChevronLeft, RotateCcw, X, Wand2, Sticker, Trash2, Sliders, Mail, QrCode
 } from 'lucide-react';
 import './style.css';
+
+const N8N_WEBHOOK_URL = 'https://hits-pork-nearest-publicity.trycloudflare.com';
 
 const FRAMES = [
   ['debut', 'Debut · Country Bloom', 'Mint · vintage country', '✿', '#B8D5C2', '#496A58', '#F4F0E3'],
@@ -43,8 +45,6 @@ const STICKERS = [
 
 const frameFor = id => FRAMES.find(frame => frame[0] === id) || FRAMES[4];
 
-// Setiap era memiliki komposisi photobooth yang berbeda, terinspirasi dari referensi pengguna.
-// Semua desain dibuat sebagai artwork orisinal (bukan menyalin template/foto milik kreator lain).
 const FRAME_LAYOUTS = {
   debut: 'grid', fearless: 'vertical', 'speak-now': 'polaroid', red: 'title',
   '1989': 'postcard', reputation: 'film', lover: 'polaroid', folklore: 'grid',
@@ -52,8 +52,7 @@ const FRAME_LAYOUTS = {
   '1989-vault': 'postcard', 'red-tv': 'title', 'speak-now-tv': 'polaroid', 'fearless-tv': 'vertical'
 };
 const frameLayout = id => FRAME_LAYOUTS[id] || 'vertical';
-// A deliberate mix of portrait photostrips and landscape two-row sheets.
-// Landscape layouts keep four separate photo slots in one horizontal row per strip.
+
 const FRAME_ORIENTATIONS = {
   debut: 'horizontal', fearless: 'vertical', 'speak-now': 'vertical', red: 'vertical',
   '1989': 'vertical', reputation: 'horizontal', lover: 'vertical', folklore: 'vertical',
@@ -61,7 +60,7 @@ const FRAME_ORIENTATIONS = {
   '1989-vault': 'vertical', 'red-tv': 'vertical', 'speak-now-tv': 'vertical', 'fearless-tv': 'horizontal'
 };
 const frameOrientation = id => FRAME_ORIENTATIONS[id] || 'vertical';
-// The number of poses is part of each template's composition (3, 4, or 6).
+
 const FRAME_PHOTO_COUNTS = {
   debut: 4, fearless: 3, 'speak-now': 4, red: 4, '1989': 4, reputation: 4,
   lover: 3, folklore: 6, evermore: 3, midnights: 4, ttpd: 4,
@@ -69,7 +68,6 @@ const FRAME_PHOTO_COUNTS = {
 };
 const framePhotoCount = id => FRAME_PHOTO_COUNTS[id] || 4;
 const orientationClass = id => `orientation-${frameOrientation(id)}`;
-const isPortraitFrame = id => ['grid'].includes(frameLayout(id));
 const hasTitlePanel = id => ['title', 'postcard', 'editorial'].includes(frameLayout(id));
 const slotLayoutClass = id => `layout-${frameLayout(id)}`;
 const filterFor = id => FILTERS.find(f => f.id === id) || FILTERS[0];
@@ -204,6 +202,7 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   const paper = frame[6];
   const layout = frameLayout(theme);
   const titlePanel = hasTitlePanel(theme);
+  const photoCount = framePhotoCount(theme);
 
   const horizontal = frameOrientation(theme) === 'horizontal';
   const W = horizontal ? 1790 : 1100;
@@ -230,7 +229,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
   const stripX = horizontal ? [32, 32] : [32, 568];
   const stripY = horizontal ? [28, 568] : [28, 28];
   const stripW = horizontal ? W - 64 : 500;
-  const stripTop = 28;
   const stripH = horizontal ? 504 : H - 56;
 
   const drawRoundRect = (x, y, w, h, r) => {
@@ -250,7 +248,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.globalAlpha = 0.24;
     ctx.lineWidth = 3;
     if (themeId === 'debut') {
-      // Country linen: delicate stitched edges and tiny flower marks.
       ctx.setLineDash([5, 9]); ctx.strokeRect(x + 18, y + 18, w - 36, h - 36); ctx.setLineDash([]);
       for (let i = 0; i < 8; i++) { const px = x + 30 + (i % 4) * ((w - 60) / 3); const py = y + 30 + Math.floor(i / 4) * (h - 60); ctx.font = '24px serif'; ctx.fillText('✿', px, py + 8); }
     } else if (themeId === 'fearless' || themeId === 'fearless-tv') {
@@ -292,7 +289,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.fill();
     drawAlbumArtwork(theme, sx, sy, stripW, stripH, ink);
 
-    // Special edition motifs make the re-recorded / vault variants visibly distinct.
     if (theme === '1989-vault') {
       ctx.save();
       ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.setLineDash([10, 8]);
@@ -327,7 +323,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.restore();
     }
 
-    // Distinct album-inspired paper treatments on the exported strips.
     if (layout === 'postcard') {
       ctx.strokeStyle = ink; ctx.globalAlpha = 0.58; ctx.lineWidth = 3;
       ctx.strokeRect(sx + 12, sy + 12, stripW - 24, stripH - 24);
@@ -347,7 +342,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.globalAlpha = 1;
     }
 
-    // Header
     ctx.fillStyle = ink;
     ctx.textAlign = 'center';
     ctx.font = '800 16px "DM Sans", sans-serif';
@@ -403,7 +397,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
             })();
 
     slots.forEach((slot, idx) => {
-      // Polaroid / frame card behind photo
       ctx.save();
       ctx.fillStyle = paper;
       ctx.strokeStyle = ink;
@@ -425,7 +418,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
         ctx.lineWidth = theme === '1989' ? 7 : theme === 'reputation' ? 5 : 3; ctx.stroke();
       }
 
-      // Clip inner image
       const pad = layout === 'polaroid' ? 14 : 10;
       const ix = slotX + pad;
       const iy = slot.top + pad;
@@ -452,7 +444,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.drawImage(img, ix + offsetX, iy + offsetY, drawW, drawH);
       ctx.restore();
 
-      // Corner motif badge
       ctx.fillStyle = paper;
       ctx.fillRect(ix + iw - 34, iy + ih - 30, 30, 26);
       ctx.fillStyle = ink;
@@ -509,7 +500,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
       ctx.restore();
     }
 
-    // Footer
     ctx.fillStyle = ink;
     ctx.textAlign = 'center';
     ctx.font = '800 17px "DM Sans", sans-serif';
@@ -517,7 +507,6 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.restore();
   }
 
-  // Render user stickers proportionally onto final strip
   stickers.forEach(st => {
     const px = (st.x / 100) * W;
     const py = (st.y / 100) * H;
@@ -532,7 +521,7 @@ async function renderFinalStripDataUrl({ photos, theme, filterCss, stickers }) {
     ctx.restore();
   });
 
-  return canvas.toDataURL('image/jpeg', 0.94);
+  return canvas.toDataURL('image/jpeg', 0.90);
 }
 
 function App() {
@@ -548,6 +537,13 @@ function App() {
   const [stickers, setStickers] = useState([]);
   const [selectedStickerId, setSelectedStickerId] = useState(null);
   const [finalImageUrl, setFinalImageUrl] = useState('');
+
+  // State untuk Email Delivery & QR Code
+  const [email, setEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [driveLink, setDriveLink] = useState('');
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -602,7 +598,6 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Changing templates in the editor also reconciles the number of captured poses.
   const selectEditorFrame = (nextTheme) => {
     setTheme(nextTheme);
     const required = framePhotoCount(nextTheme);
@@ -628,8 +623,6 @@ function App() {
       await sleep(250);
 
       const v = videoRef.current;
-      // Keep the camera's real aspect ratio. A fixed 900x630 canvas
-      // stretched 16:9 / 4:3 camera feeds and made faces look squashed.
       const sourceWidth = v.videoWidth || v.clientWidth;
       const sourceHeight = v.videoHeight || v.clientHeight;
       if (!sourceWidth || !sourceHeight) {
@@ -641,7 +634,6 @@ function App() {
       c.width = Math.max(1, Math.round(sourceWidth * scale));
       c.height = Math.max(1, Math.round(sourceHeight * scale));
       const ctx = c.getContext('2d');
-      // Keep the familiar mirrored selfie, without changing image proportions.
       ctx.translate(c.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(v, 0, 0, c.width, c.height);
@@ -724,6 +716,9 @@ function App() {
     if (photos.length !== framePhotoCount(theme)) return;
     setBusy(true);
     setError('');
+    setQrCodeUrl('');
+    setDriveLink('');
+    setEmailSentSuccess(false);
     try {
       const dataUrl = await renderFinalStripDataUrl({
         photos,
@@ -737,6 +732,50 @@ function App() {
       setError('Gagal memproses hasil photostrip.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendToEmailAndGetQr = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !finalImageUrl || sendingEmail) return;
+    setSendingEmail(true);
+    setError('');
+    try {
+      const base64Data = finalImageUrl.split(',')[1];
+      const res = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          theme,
+          imageBase64: base64Data
+        })
+      });
+      if (!res.ok) {
+        throw new Error(`Gagal mengirim ke server n8n (HTTP ${res.status})`);
+      }
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = {};
+      }
+
+      const finalDriveUrl = data.driveUrl || data.webViewLink || '';
+      const generatedQr =
+        data.qrUrl ||
+        (finalDriveUrl
+          ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(finalDriveUrl)}`
+          : '');
+
+      setDriveLink(finalDriveUrl);
+      setQrCodeUrl(generatedQr);
+      setEmailSentSuccess(true);
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat mengirim ke Gmail. Pastikan Cloudflare Tunnel & n8n aktif.');
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -756,6 +795,10 @@ function App() {
     setSelectedStickerId(null);
     setSelectedFilter('none');
     setFinalImageUrl('');
+    setEmail('');
+    setQrCodeUrl('');
+    setDriveLink('');
+    setEmailSentSuccess(false);
     setError('');
     setPage('home');
   };
@@ -793,7 +836,7 @@ function App() {
             {page === 'camera' ? 'Beranda' : page === 'edit' ? 'Kamera' : 'Kembali Edit'}
           </button>
           <div className="steps">
-            {['Pilih Era', 'Selfie', 'Frame & Edit', 'Simpan'].map((label, i) => (
+            {['Pilih Era', 'Selfie', 'Frame & Edit', 'Simpan & QR'].map((label, i) => (
               <span key={label} className={stepIndex >= i ? 'active' : ''}>
                 <b>{i + 1}</b>
                 {label}
@@ -816,7 +859,7 @@ function App() {
                 <span className="sparkle-inline">✳</span>
               </h1>
               <p>
-                Langsung buka kamera, ambil 3–6 pose sesuai desain frame, pilih 15 era album favoritmu, lalu percantik dengan filter dan stiker lucu!
+                Langsung buka kamera, ambil 3–6 pose sesuai desain frame, pilih 15 era album favoritmu, lalu kirim ke Gmail &amp; dapatkan QR Code!
               </p>
               <div className="hero-cta">
                 <button className="btn primary" onClick={() => startCameraDirect()}>
@@ -828,7 +871,7 @@ function App() {
               </div>
               <div className="social-proof">
                 <div className="mini-stars">★★★★★</div>
-                <span>langsung foto · tanpa isi data · gratis unduh</span>
+                <span>gratis tanpa payment · kirim Gmail &amp; QR Code instan</span>
               </div>
             </div>
             <div className="hero-backdrop-art" aria-hidden="true" />
@@ -838,7 +881,7 @@ function App() {
             {[
               [<Camera size={23} />, '1. Klik Start & Selfie', 'Jumlah pose menyesuaikan desain frame, dan setiap foto bisa di-retake'],
               [<Sparkles size={23} />, '2. Pilih Frame Era', '15 template photostrip estetik siap dipilih kapan saja'],
-              [<Wand2 size={23} />, '3. Filter, Stiker & Unduh', 'Edit hasil fotomu dengan filter & stiker lalu simpan langsung']
+              [<QrCode size={23} />, '3. Kirim Gmail & Scan QR', 'Masukkan alamat Gmailmu untuk menerima softfile & QR Code download']
             ].map(([icon, title, description]) => (
               <div className="feature" key={title}>
                 <div className="feature-icon">{icon}</div>
@@ -950,7 +993,7 @@ function App() {
               </button>
               {photos.length === framePhotoCount(theme) && replaceAt === null && (
                 <button onClick={() => setPage('edit')} className="btn outline" style={{ marginLeft: 12 }}>
-                  Lanjut Pilih Frame & Edit <ArrowRight size={17} />
+                  Lanjut Pilih Frame &amp; Edit <ArrowRight size={17} />
                 </button>
               )}
             </div>
@@ -990,8 +1033,8 @@ function App() {
         <main className="editor-layout wrap">
           <div className="editor-stage">
             <span className="section-kicker">STEP 02 · CUSTOMIZE YOUR STRIP</span>
-            <h2>Pilih frame & <em>edit!</em></h2>
-            <p>Pilih desain frame, atur filter warna, dan tempelkan stiker (klik & geser stiker di atas photostrip).</p>
+            <h2>Pilih frame &amp; <em>edit!</em></h2>
+            <p>Pilih desain frame, atur filter warna, dan tempelkan stiker (klik &amp; geser stiker di atas photostrip).</p>
 
             <div className="editor-canvas-wrap">
               <PhotoStripPreview
@@ -1021,7 +1064,6 @@ function App() {
           </div>
 
           <aside className="editor-sidebar">
-            {/* 1. Pilih Frame */}
             <div className="tool-box">
               <div className="tool-title">
                 <Sparkles size={16} /> <b>1. Pilih Frame Era</b>
@@ -1042,7 +1084,6 @@ function App() {
               </div>
             </div>
 
-            {/* 2. Pilih Filter */}
             <div className="tool-box">
               <div className="tool-title">
                 <Sliders size={16} /> <b>2. Filter Foto</b>
@@ -1061,7 +1102,6 @@ function App() {
               </div>
             </div>
 
-            {/* 3. Tambah Stiker */}
             <div className="tool-box">
               <div className="tool-title">
                 <Sticker size={16} /> <b>3. Tambah Stiker</b>
@@ -1125,7 +1165,7 @@ function App() {
             <div className="success-bloom">✿</div>
             <span className="section-kicker">YAY, IT'S ALL YOURS!</span>
             <h2>Forever starts <em>here.</em></h2>
-            <p>Photostrip kamu sudah jadi! Simpan hasilnya ke perangkatmu atau kembali edit jika masih ingin mengubah frame/stiker.</p>
+            <p>Photostrip kamu sudah jadi! Masukkan alamat Gmailmu untuk menerima softfile &amp; memunculkan QR Code unduhan.</p>
 
             {finalImageUrl && (
               <div className="final-strip-box">
@@ -1133,8 +1173,90 @@ function App() {
               </div>
             )}
 
-            <button className="btn primary wide" onClick={downloadFinal}>
-              <Download size={18} /> Download 2 Strip Foto
+            {!emailSentSuccess ? (
+              <form
+                onSubmit={sendToEmailAndGetQr}
+                style={{
+                  marginTop: 22,
+                  padding: 18,
+                  background: '#FAF7FF',
+                  borderRadius: 18,
+                  border: '1px solid #E6DCF2',
+                  textAlign: 'left'
+                }}
+              >
+                <label style={{ marginBottom: 10 }}>
+                  Alamat Gmail Tujuan
+                  <input
+                    type="email"
+                    required
+                    placeholder="contoh: kamu@gmail.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    disabled={sendingEmail}
+                  />
+                </label>
+                <button type="submit" className="btn primary wide" disabled={sendingEmail}>
+                  <Mail size={17} />
+                  {sendingEmail ? 'Mengirim ke Gmail & Membuat QR…' : 'Kirim ke Gmail & Tampilkan QR Code'}
+                </button>
+              </form>
+            ) : (
+              <div
+                style={{
+                  marginTop: 22,
+                  padding: 20,
+                  background: '#FAF7FF',
+                  borderRadius: 18,
+                  border: '1px solid #DCD0F0'
+                }}
+              >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#3B977D', fontWeight: 800, fontSize: 12, marginBottom: 8 }}>
+                  <Check size={15} /> Terkirim ke {email}
+                </div>
+
+                {qrCodeUrl ? (
+                  <>
+                    <p style={{ fontSize: 12, margin: '4px 0 12px', color: '#645C73' }}>
+                      Scan QR Code di bawah ini dengan kamera HP untuk mengunduh foto dari Google Drive:
+                    </p>
+                    <img
+                      src={qrCodeUrl}
+                      alt="QR Code Download Era Snap"
+                      style={{
+                        width: 190,
+                        height: 190,
+                        borderRadius: 14,
+                        border: '5px solid #fff',
+                        boxShadow: '0 8px 20px #2D1F471A',
+                        display: 'block',
+                        margin: '0 auto'
+                      }}
+                    />
+                  </>
+                ) : (
+                  <p style={{ fontSize: 12, margin: '6px 0', color: '#645C73' }}>
+                    Foto sudah diproses dan dikirim ke inbox Gmail kamu!
+                  </p>
+                )}
+
+                {driveLink && (
+                  <div style={{ marginTop: 12 }}>
+                    <a
+                      href={driveLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: 12, fontWeight: 800, color: 'var(--purple)', textDecoration: 'underline' }}
+                    >
+                      Buka Link Google Drive Langsung ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button className="btn outline wide" onClick={downloadFinal}>
+              <Download size={18} /> Download Langsung ke Perangkat
             </button>
             <button className="btn outline wide" onClick={() => setPage('edit')}>
               <Wand2 size={16} /> Edit Frame / Filter / Stiker Lagi
